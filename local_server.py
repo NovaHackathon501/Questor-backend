@@ -6,6 +6,11 @@ Endpoints:
   GET  http://localhost:8000/books/structure
   GET  http://localhost:8000/books/chapter?class=class-9&subject=Science&chapter=1
   POST http://localhost:8000/ai/doubt
+  POST http://localhost:8000/ai/hotquestions
+  POST http://localhost:8000/ai/quiz
+  POST http://localhost:8000/ai/summarize
+  POST http://localhost:8000/ai/guidance
+  POST http://localhost:8000/ai/questions
 """
 
 import sys
@@ -17,9 +22,14 @@ from urllib.parse import urlparse, parse_qs
 # Allow imports from src/
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 
-from handlers.get_structure   import handler as get_structure_handler
-from handlers.get_chapter_url import handler as get_chapter_url_handler
-from handlers.ai_doubt        import handler as ai_doubt_handler
+from handlers.get_structure    import handler as get_structure_handler
+from handlers.get_chapter_url  import handler as get_chapter_url_handler
+from handlers.ai_doubt         import handler as ai_doubt_handler
+from handlers.ai_hotquestions  import handler as ai_hotquestions_handler
+from handlers.ai_quiz          import handler as ai_quiz_handler
+from handlers.ai_summarize     import handler as ai_summarize_handler
+from handlers.ai_guidance      import handler as ai_guidance_handler
+from handlers.ai_questions     import handler as ai_questions_handler
 
 PORT = 8000
 
@@ -56,14 +66,23 @@ class RequestHandler(BaseHTTPRequestHandler):
         length = int(self.headers.get("Content-Length", 0))
         body   = self.rfile.read(length).decode("utf-8") if length else "{}"
 
-        # ── Route: POST /ai/doubt ─────────────────────────────────────────────────
+        # ── AI Routes ─────────────────────────────────────────────────────────
         if path == "/ai/doubt":
-            event  = {"body": body}
-            result = ai_doubt_handler(event, None)
-            self._send(result["statusCode"], result["body"])
-
+            result = ai_doubt_handler({"body": body}, None)
+        elif path == "/ai/hotquestions":
+            result = ai_hotquestions_handler({"body": body}, None)
+        elif path == "/ai/quiz":
+            result = ai_quiz_handler({"body": body}, None)
+        elif path == "/ai/summarize":
+            result = ai_summarize_handler({"body": body}, None)
+        elif path == "/ai/guidance":
+            result = ai_guidance_handler({"body": body}, None)
+        elif path == "/ai/questions":
+            result = ai_questions_handler({"body": body}, None)
         else:
-            self._send(404, json.dumps({"error": f"Route not found: {path}"}))
+            result = {"statusCode": 404, "body": json.dumps({"error": f"Route not found: {path}"})}
+
+        self._send(result["statusCode"], result["body"])
 
     def _send(self, status: int, body: str):
         self.send_response(status)
@@ -81,6 +100,11 @@ if __name__ == "__main__":
     print(f"   GET  http://localhost:{PORT}/books/structure")
     print(f"   GET  http://localhost:{PORT}/books/chapter?class=class-9&subject=Science&chapter=1")
     print(f"   POST http://localhost:{PORT}/ai/doubt")
+    print(f"   POST http://localhost:{PORT}/ai/hotquestions")
+    print(f"   POST http://localhost:{PORT}/ai/quiz")
+    print(f"   POST http://localhost:{PORT}/ai/summarize")
+    print(f"   POST http://localhost:{PORT}/ai/guidance")
+    print(f"   POST http://localhost:{PORT}/ai/questions")
     print(f"\n   Press Ctrl+C to stop.\n")
 
     server = HTTPServer(("localhost", PORT), RequestHandler)
