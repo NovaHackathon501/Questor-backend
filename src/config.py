@@ -20,6 +20,12 @@ _session = boto3.session.Session(
     region_name           = AWS_REGION,
 )
 
+from botocore.config import Config
+
 s3_client      = _session.client("s3")
-bedrock_client = _session.client("bedrock-runtime", region_name=BEDROCK_REGION)
+bedrock_client = _session.client(
+    "bedrock-runtime",
+    region_name=BEDROCK_REGION,
+    config=Config(retries={"max_attempts": 1, "mode": "standard"})  # no auto-retries on quota errors
+)
 
